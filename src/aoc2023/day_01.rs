@@ -1,6 +1,13 @@
-use std::fs;
+use crate::utils::read_input;
 
-fn solve(lines: impl Iterator<Item = String>) -> u32 {
+pub fn solve() {
+    let input = read_input("inputs/day_01.txt");
+
+    println!("Day 01, Puzzle 01: {}", puzzle_01(&input));
+    println!("Day 01, Puzzle 02: {}", puzzle_02(&input));
+}
+
+fn process_lines(lines: impl Iterator<Item = String>) -> u32 {
     return lines
         .map(|line| {
             let mut first_digit: Option<u8> = None;
@@ -29,51 +36,70 @@ fn solve(lines: impl Iterator<Item = String>) -> u32 {
                 last_digit = first_digit;
             }
 
-            format!("{}{}", first_digit.unwrap(), last_digit.unwrap())
+            format!("{}{}", first_digit.unwrap_or(0), last_digit.unwrap_or(0))
                 .parse::<u32>()
                 .unwrap()
         })
         .sum::<u32>();
 }
 
-pub fn puzzle_01() {
-    let result = solve(
-        fs::read_to_string("inputs/day_01.txt")
-            .expect("File day_01.txt not found!")
-            .lines()
-            .map(|line| line.to_string()),
-    );
-
-    println!("Day 01, Puzzle 01: {}", result);
+fn puzzle_01(input: &String) -> u32 {
+    return process_lines(input.lines().map(|line| line.to_string()));
 }
 
-pub fn puzzle_02() {
-    let result = solve(
-        fs::read_to_string("inputs/day_01.txt")
-            .expect("File day_01.txt not found!")
-            .lines()
-            .map(|line| {
-                // Replace the words with numbers. Notice
-                // that there are overlapping words, so
-                // we need to replace the words with the
-                // first character and the last chatacter
-                // of the word. For example:
-                //
-                // "2eightwo" => "2e8t2o"
-                let new_line = line
-                    .replace("one", "o1e")
-                    .replace("two", "t2o")
-                    .replace("three", "t3e")
-                    .replace("four", "f4r")
-                    .replace("five", "f5e")
-                    .replace("six", "s6x")
-                    .replace("seven", "s7n")
-                    .replace("eight", "e8t")
-                    .replace("nine", "n9e");
+fn puzzle_02(input: &String) -> u32 {
+    return process_lines(input.lines().map(|line| {
+        // Replace the words with numbers. Notice
+        // that there are overlapping words, so
+        // we need to replace the words with the
+        // first character and the last chatacter
+        // of the word. For example:
+        //
+        // "2eightwo" => "2e8t2o"
+        let new_line = line
+            .replace("one", "o1e")
+            .replace("two", "t2o")
+            .replace("three", "t3e")
+            .replace("four", "f4r")
+            .replace("five", "f5e")
+            .replace("six", "s6x")
+            .replace("seven", "s7n")
+            .replace("eight", "e8t")
+            .replace("nine", "n9e");
 
-                new_line
-            }),
-    );
+        new_line
+    }));
+}
 
-    println!("Day 01, Puzzle 02: {}", result);
+mod tests {
+    #[test]
+    fn test_puzzle_01() {
+        let input = r#"
+1abc2
+pqr3stu8vwx
+a1b2c3d4e5f
+treb7uchet
+        "#;
+
+        let result = super::puzzle_01(&input.to_string());
+
+        assert_eq!(result, 142);
+    }
+
+    #[test]
+    fn test_puzzle_02() {
+        let input = r#"
+two1nine
+eightwothree
+abcone2threexyz
+xtwone3four
+4nineeightseven2
+zoneight234
+7pqrstsixteen
+        "#;
+
+        let result = super::puzzle_02(&input.to_string());
+
+        assert_eq!(result, 281);
+    }
 }
