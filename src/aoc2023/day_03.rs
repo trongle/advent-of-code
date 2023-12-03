@@ -5,6 +5,31 @@ use crate::utils::read_input;
 const DR: [i8; 8] = [-1, -1, 0, 1, 1, 1, 0, -1];
 const DC: [i8; 8] = [0, 1, 1, 1, 0, -1, -1, -1];
 
+struct EngineSchematic(Vec<Vec<char>>);
+
+impl EngineSchematic {
+    fn parse(input: &str) -> Self {
+        return EngineSchematic(
+            input
+                .lines()
+                .map(|line| line.chars().collect())
+                .collect::<Vec<Vec<char>>>(),
+        );
+    }
+
+    fn row_len(&self) -> usize {
+        return self.0.len();
+    }
+
+    fn col_len(&self) -> usize {
+        return self.0[0].len();
+    }
+
+    fn cell(&self, r: usize, c: usize) -> char {
+        return self.0[r][c];
+    }
+}
+
 pub fn solve() {
     let input = read_input("inputs/day_03.txt");
 
@@ -13,16 +38,13 @@ pub fn solve() {
 }
 
 fn puzzle_01(input: &str) -> usize {
-    let grids = input
-        .lines()
-        .map(|line| line.chars().collect())
-        .collect::<Vec<Vec<char>>>();
-    let mut visited = vec![vec![false; grids[0].len()]; grids.len()];
+    let engine = EngineSchematic::parse(input);
+    let mut visited = vec![vec![false; engine.col_len()]; engine.row_len()];
     let mut sum = 0;
 
-    for r in 0..grids.len() {
-        for c in 0..grids[0].len() {
-            if grids[r][c] == '.' || grids[r][c].is_digit(10) {
+    for r in 0..engine.row_len() {
+        for c in 0..engine.col_len() {
+            if engine.cell(r, c) == '.' || engine.cell(r, c).is_digit(10) {
                 continue;
             }
 
@@ -31,47 +53,58 @@ fn puzzle_01(input: &str) -> usize {
                 let i = r as isize + DR[k] as isize;
                 let j = c as isize + DC[k] as isize;
 
-                if i < 0 || i >= grids.len() as isize || j < 0 || j >= grids[0].len() as isize {
+                if i < 0
+                    || i >= engine.row_len() as isize
+                    || j < 0
+                    || j >= engine.col_len() as isize
+                {
                     continue;
                 }
                 if visited[i as usize][j as usize] {
                     continue;
                 }
 
-                if grids[i as usize][j as usize].is_digit(10) {
-                    let mut number_str = String::from(grids[i as usize][j as usize]);
+                let cell = engine.cell(i as usize, j as usize);
+                if cell.is_digit(10) {
+                    let mut number_str = String::from(cell);
                     visited[i as usize][j as usize] = true;
 
                     let mut _j = j;
                     loop {
                         _j -= 1;
-                        if _j < 0
-                            || _j >= grids[0].len() as isize
-                            || !grids[i as usize][_j as usize].is_digit(10)
-                        {
+
+                        if _j < 0 || _j >= engine.col_len() as isize {
                             break;
                         }
                         if visited[i as usize][_j as usize] {
                             break;
                         }
 
-                        number_str.insert(0, grids[i as usize][_j as usize]);
+                        let cell = engine.cell(i as usize, _j as usize);
+                        if !cell.is_digit(10) {
+                            break;
+                        }
+
+                        number_str.insert(0, cell);
                         visited[i as usize][_j as usize] = true;
                     }
                     let mut _j = j;
                     loop {
                         _j += 1;
-                        if _j < 0
-                            || _j >= grids[0].len() as isize
-                            || !grids[i as usize][_j as usize].is_digit(10)
-                        {
+
+                        if _j < 0 || _j >= engine.col_len() as isize {
                             break;
                         }
                         if visited[i as usize][_j as usize] {
                             break;
                         }
 
-                        number_str.push(grids[i as usize][_j as usize]);
+                        let cell = engine.cell(i as usize, _j as usize);
+                        if !cell.is_digit(10) {
+                            break;
+                        }
+
+                        number_str.push(cell);
                         visited[i as usize][_j as usize] = true;
                     }
 
