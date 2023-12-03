@@ -2,6 +2,9 @@ use std::collections::HashMap;
 
 use crate::utils::read_input;
 
+const DR: [i8; 8] = [-1, -1, 0, 1, 1, 1, 0, -1];
+const DC: [i8; 8] = [0, 1, 1, 1, 0, -1, -1, -1];
+
 pub fn solve() {
     let input = read_input("inputs/day_03.txt");
 
@@ -14,8 +17,6 @@ fn puzzle_01(input: &str) -> usize {
         .lines()
         .map(|line| line.chars().collect())
         .collect::<Vec<Vec<char>>>();
-    let dr: [i8; 8] = [-1, -1, 0, 1, 1, 1, 0, -1];
-    let dc: [i8; 8] = [0, 1, 1, 1, 0, -1, -1, -1];
     let mut visited = vec![vec![false; grids[0].len()]; grids.len()];
     let mut sum = 0;
 
@@ -27,8 +28,8 @@ fn puzzle_01(input: &str) -> usize {
 
             // collect all numbers around it
             for k in 0..8 {
-                let i = r as isize + dr[k] as isize;
-                let j = c as isize + dc[k] as isize;
+                let i = r as isize + DR[k] as isize;
+                let j = c as isize + DC[k] as isize;
 
                 if i < 0 || i >= grids.len() as isize || j < 0 || j >= grids[0].len() as isize {
                     continue;
@@ -88,8 +89,6 @@ fn puzzle_02(input: &str) -> usize {
         .lines()
         .map(|line| line.chars().collect())
         .collect::<Vec<Vec<char>>>();
-    let dr: [i8; 8] = [-1, -1, 0, 1, 1, 1, 0, -1];
-    let dc: [i8; 8] = [0, 1, 1, 1, 0, -1, -1, -1];
     let mut visited = vec![vec![false; grids[0].len()]; grids.len()];
     let mut sum = 0;
 
@@ -99,29 +98,11 @@ fn puzzle_02(input: &str) -> usize {
                 continue;
             }
 
-            // Checkin the '*' is adjacent to exactly
-            // 2 part numbers.
-            // let mut count = 0;
-            // for k in 0..8 {
-            //     let i = r as isize + dr[k] as isize;
-            //     let j = c as isize + dc[k] as isize;
-            //
-            //     if i < 0 || i >= grids.len() as isize || j < 0 || j >= grids[0].len() as isize {
-            //         continue;
-            //     }
-            //     if grids[i as usize][j as usize].is_digit(10) {
-            //         count += 1;
-            //     }
-            // }
-            // if count != 2 {
-            //     continue;
-            // }
-
             // collect all numbers around it
             let mut numbers: HashMap<String, usize> = HashMap::new();
             for k in 0..8 {
-                let i = r as isize + dr[k] as isize;
-                let j = c as isize + dc[k] as isize;
+                let i = r as isize + DR[k] as isize;
+                let j = c as isize + DC[k] as isize;
 
                 if i < 0 || i >= grids.len() as isize || j < 0 || j >= grids[0].len() as isize {
                     continue;
