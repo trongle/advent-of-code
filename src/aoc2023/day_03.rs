@@ -25,8 +25,94 @@ impl EngineSchematic {
         return self.0[0].len();
     }
 
-    fn cell(&self, r: usize, c: usize) -> char {
-        return self.0[r][c];
+    fn point(&self, r: usize, c: usize) -> Point {
+        return Point::new(r, c, self.0[r][c]);
+    }
+}
+
+#[derive(PartialEq, Eq, Hash)]
+struct Point {
+    x: usize,
+    y: usize,
+    value: char,
+}
+
+impl Point {
+    fn new(y: usize, x: usize, value: char) -> Self {
+        return Point { x, y, value };
+    }
+
+    fn is_digit(&self) -> bool {
+        return self.value.is_digit(10);
+    }
+
+    fn collect_numbers(
+        &self,
+        engine: &EngineSchematic,
+        visited: &mut Vec<Vec<bool>>,
+    ) -> HashMap<Point, usize> {
+        let mut results = HashMap::new();
+
+        for k in 0..8 {
+            let i = self.y as isize + DR[k] as isize;
+            let j = self.x as isize + DC[k] as isize;
+
+            if i < 0 || i >= engine.row_len() as isize || j < 0 || j >= engine.col_len() as isize {
+                continue;
+            }
+            if visited[i as usize][j as usize] {
+                continue;
+            }
+
+            let point = engine.point(i as usize, j as usize);
+            if point.is_digit() {
+                let mut number_str = String::from(point.value);
+                visited[i as usize][j as usize] = true;
+
+                let mut _j = j;
+                loop {
+                    _j -= 1;
+
+                    if _j < 0 || _j >= engine.col_len() as isize {
+                        break;
+                    }
+                    if visited[i as usize][_j as usize] {
+                        break;
+                    }
+
+                    let point = engine.point(i as usize, _j as usize);
+                    if !point.is_digit() {
+                        break;
+                    }
+
+                    number_str.insert(0, point.value);
+                    visited[i as usize][_j as usize] = true;
+                }
+                let mut _j = j;
+                loop {
+                    _j += 1;
+
+                    if _j < 0 || _j >= engine.col_len() as isize {
+                        break;
+                    }
+                    if visited[i as usize][_j as usize] {
+                        break;
+                    }
+
+                    let point = engine.point(i as usize, _j as usize);
+                    if !point.is_digit() {
+                        break;
+                    }
+
+                    number_str.push(point.value);
+                    visited[i as usize][_j as usize] = true;
+                }
+
+                results.insert(point, number_str.parse::<usize>().unwrap());
+            }
+        }
+
+        return results;
     }
 }
 
@@ -44,73 +130,16 @@ fn puzzle_01(input: &str) -> usize {
 
     for r in 0..engine.row_len() {
         for c in 0..engine.col_len() {
-            if engine.cell(r, c) == '.' || engine.cell(r, c).is_digit(10) {
+            let point = engine.point(r, c);
+
+            if point.value == '.' || point.is_digit() {
                 continue;
             }
 
-            // collect all numbers around it
-            for k in 0..8 {
-                let i = r as isize + DR[k] as isize;
-                let j = c as isize + DC[k] as isize;
-
-                if i < 0
-                    || i >= engine.row_len() as isize
-                    || j < 0
-                    || j >= engine.col_len() as isize
-                {
-                    continue;
-                }
-                if visited[i as usize][j as usize] {
-                    continue;
-                }
-
-                let cell = engine.cell(i as usize, j as usize);
-                if cell.is_digit(10) {
-                    let mut number_str = String::from(cell);
-                    visited[i as usize][j as usize] = true;
-
-                    let mut _j = j;
-                    loop {
-                        _j -= 1;
-
-                        if _j < 0 || _j >= engine.col_len() as isize {
-                            break;
-                        }
-                        if visited[i as usize][_j as usize] {
-                            break;
-                        }
-
-                        let cell = engine.cell(i as usize, _j as usize);
-                        if !cell.is_digit(10) {
-                            break;
-                        }
-
-                        number_str.insert(0, cell);
-                        visited[i as usize][_j as usize] = true;
-                    }
-                    let mut _j = j;
-                    loop {
-                        _j += 1;
-
-                        if _j < 0 || _j >= engine.col_len() as isize {
-                            break;
-                        }
-                        if visited[i as usize][_j as usize] {
-                            break;
-                        }
-
-                        let cell = engine.cell(i as usize, _j as usize);
-                        if !cell.is_digit(10) {
-                            break;
-                        }
-
-                        number_str.push(cell);
-                        visited[i as usize][_j as usize] = true;
-                    }
-
-                    sum += number_str.parse::<usize>().unwrap();
-                }
-            }
+            sum += point
+                .collect_numbers(&engine, &mut visited)
+                .values()
+                .sum::<usize>();
         }
     }
 
@@ -118,72 +147,18 @@ fn puzzle_01(input: &str) -> usize {
 }
 
 fn puzzle_02(input: &str) -> usize {
-    let grids = input
-        .lines()
-        .map(|line| line.chars().collect())
-        .collect::<Vec<Vec<char>>>();
-    let mut visited = vec![vec![false; grids[0].len()]; grids.len()];
+    let engine = EngineSchematic::parse(input);
+    let mut visited = vec![vec![false; engine.col_len()]; engine.row_len()];
     let mut sum = 0;
 
-    for r in 0..grids.len() {
-        for c in 0..grids[0].len() {
-            if grids[r][c] != '*' {
+    for r in 0..engine.row_len() {
+        for c in 0..engine.col_len() {
+            let point = engine.point(r, c);
+            if point.value != '*' {
                 continue;
             }
 
-            // collect all numbers around it
-            let mut numbers: HashMap<String, usize> = HashMap::new();
-            for k in 0..8 {
-                let i = r as isize + DR[k] as isize;
-                let j = c as isize + DC[k] as isize;
-
-                if i < 0 || i >= grids.len() as isize || j < 0 || j >= grids[0].len() as isize {
-                    continue;
-                }
-                if visited[i as usize][j as usize] {
-                    continue;
-                }
-
-                if grids[i as usize][j as usize].is_digit(10) {
-                    let mut number_str = String::from(grids[i as usize][j as usize]);
-                    visited[i as usize][j as usize] = true;
-
-                    let mut _j = j;
-                    loop {
-                        _j -= 1;
-                        if _j < 0
-                            || _j >= grids[0].len() as isize
-                            || !grids[i as usize][_j as usize].is_digit(10)
-                        {
-                            break;
-                        }
-                        if visited[i as usize][_j as usize] {
-                            break;
-                        }
-
-                        number_str.insert(0, grids[i as usize][_j as usize]);
-                        visited[i as usize][_j as usize] = true;
-                    }
-                    let mut _j = j;
-                    loop {
-                        _j += 1;
-                        if _j < 0
-                            || _j >= grids[0].len() as isize
-                            || !grids[i as usize][_j as usize].is_digit(10)
-                        {
-                            break;
-                        }
-                        if visited[i as usize][_j as usize] {
-                            break;
-                        }
-
-                        number_str.push(grids[i as usize][_j as usize]);
-                        visited[i as usize][_j as usize] = true;
-                    }
-
-                    numbers.insert(format!("{i}|{j}"), number_str.parse::<usize>().unwrap());
-                }
-            }
+            let numbers = point.collect_numbers(&engine, &mut visited);
 
             if numbers.len() != 2 {
                 continue;
@@ -192,10 +167,8 @@ fn puzzle_02(input: &str) -> usize {
             let mut iter = numbers.iter();
             let p_1 = iter.next().unwrap();
             let p_2 = iter.next().unwrap();
-            let (r_1, c_1) = p_1.0.split_once("|").unwrap();
-            let (r_2, c_2) = p_2.0.split_once("|").unwrap();
-            if (r_1.parse::<isize>().unwrap() - r_2.parse::<isize>().unwrap()).abs() == 2
-                || (c_1.parse::<isize>().unwrap() - c_2.parse::<isize>().unwrap()).abs() == 2
+            if (p_1.0.y as isize - p_2.0.y as isize).abs() == 2
+                || (p_1.0.x as isize - p_2.0.x as isize).abs() == 2
             {
                 sum += p_1.1 * p_2.1;
             }
@@ -242,53 +215,3 @@ mod tests {
         assert_eq!(result, 467835);
     }
 }
-
-//
-// - loop throught the grid
-// - check if the current cell is a symbol (dot is not a symbol):
-//  - if it is a symbol, collect all numbers around it
-// arr = []
-// i = 0, y = 0: 4 skip
-// i = 1, y = 0: 6 skip
-// i = 2, y = 0: 7 skip
-// i = 3, y = 0: . skip
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
-// ooooooooooo
