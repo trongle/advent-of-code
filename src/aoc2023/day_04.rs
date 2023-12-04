@@ -9,84 +9,63 @@ pub fn solve() {
     println!("Day 04, Puzzle 02: {}", puzzle_02(&input));
 }
 
+#[derive(Clone)]
+struct Card {
+    number: u8,
+    matching_nums: u8,
+}
+
+impl Card {
+    fn parse(input: &str) -> Self {
+        let mut parts = input.split(":");
+        let number = parts
+            .next()
+            .unwrap()
+            .replace("Card ", "")
+            .trim()
+            .parse::<u8>()
+            .unwrap();
+
+        let mut list_of_numbers = parts.next().unwrap().split("|").take(2);
+        let (winning_nums, my_nums) = (
+            list_of_numbers
+                .next()
+                .unwrap()
+                .split_whitespace()
+                .map(|num| num.parse::<usize>().unwrap())
+                .collect::<Vec<usize>>(),
+            list_of_numbers
+                .next()
+                .unwrap()
+                .split_whitespace()
+                .map(|num| num.parse::<usize>().unwrap()),
+        );
+
+        return Self {
+            number,
+            matching_nums: my_nums.fold(0, |acc, num| {
+                if winning_nums.contains(&num) {
+                    acc + 1
+                } else {
+                    acc
+                }
+            }),
+        };
+    }
+}
+
 fn puzzle_01(input: &String) -> usize {
     let mut result = 0;
 
     for line in input.lines() {
-        let mut list_of_numbers = line.split(":").nth(1).unwrap().split("|").take(2);
-        let (winning_nums, my_nums) = (
-            list_of_numbers.next().unwrap(),
-            list_of_numbers.next().unwrap(),
-        );
-
-        let winning_nums = winning_nums
-            .split_whitespace()
-            .map(|num| num.parse::<usize>().unwrap())
-            .collect::<Vec<usize>>();
-
-        let mut points = 0;
-        for num in my_nums.split_whitespace() {
-            if winning_nums.contains(&num.parse::<usize>().unwrap()) {
-                if points == 0 {
-                    points = 1;
-                } else {
-                    points *= 2;
-                }
-            }
-        }
-
-        result += points;
+        let card = Card::parse(line);
+        result += (0..card.matching_nums).fold(0, |acc, _num| if acc == 0 { 1 } else { acc * 2 });
     }
 
     return result;
 }
 
 fn puzzle_02(input: &String) -> usize {
-    #[derive(Clone)]
-    struct Card {
-        number: u8,
-        matching_nums: u8,
-    }
-
-    impl Card {
-        fn parse(input: &str) -> Self {
-            let mut parts = input.split(":");
-            let number = parts
-                .next()
-                .unwrap()
-                .replace("Card ", "")
-                .trim()
-                .parse::<u8>()
-                .unwrap();
-
-            let mut list_of_numbers = parts.next().unwrap().split("|").take(2);
-            let (winning_nums, my_nums) = (
-                list_of_numbers
-                    .next()
-                    .unwrap()
-                    .split_whitespace()
-                    .map(|num| num.parse::<usize>().unwrap())
-                    .collect::<Vec<usize>>(),
-                list_of_numbers
-                    .next()
-                    .unwrap()
-                    .split_whitespace()
-                    .map(|num| num.parse::<usize>().unwrap()),
-            );
-
-            return Self {
-                number,
-                matching_nums: my_nums.fold(0, |acc, num| {
-                    if winning_nums.contains(&num) {
-                        acc + 1
-                    } else {
-                        acc
-                    }
-                }),
-            };
-        }
-    }
-
     let mut result = 0;
     let mut queue: VecDeque<Card> = VecDeque::new();
     let mut cards: Vec<Card> = Vec::new();
